@@ -3,13 +3,13 @@
 import optparse
 import socket
 from sys import exit
-import xml.etree.ElementTree as ET
 from tabulate import tabulate
+import xml.etree.ElementTree as ET
 
 def run(ip, opt):
     xml = fetch_xml(ip)
     if( xml ):
-        tree  = ET.fromstring( xml.strip(b'\0') )
+        tree  = ET.fromstring( xml  )
         name  = "%s %s" % (tree.find('mName').text, tree.find('mVersion').text)
         size  = int( tree.find('mTotalCapacityProtected').text )
         used  = int( tree.find('mUsedCapacityProtected').text )
