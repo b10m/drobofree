@@ -1,0 +1,74 @@
+#!/usr/bin/python
+
+import optparse
+import socket
+from sys import exit
+import xml.etree.ElementTree as ET
+from tabulate import tabulate
+
+def run(ip, opt):
+    xml = fetch_xml(ip)
+    if( xml ):
+        tree  = ET.fromstring( xml.strip(b'\0') )
+        name  = "%s %s" % (tree.find('mName').text, tree.find('mVersion').text)
+        size  = int( tree.find('mTotalCapacityProtected').text )
+        used  = int( tree.find('mUsedCapacityProtected').text )
+
+        header = [ "Drobo", "Size", "Used", "Avail", "Use%" ]
+        output = [
+            name,
+            human_readable(size) if opt.h else size,
+            human_readable(used) if opt.h else used,
+            human_readable(size-used) if opt.h else size-used,
+            "{0:.0f}".format(float(used)/size*100)
+        ]
+
+        print tabulate([output], header,tablefmt="plain")
+
+    else:
+        print "No XML data returned by %s" % ip
+        exit(1)
+
+
+def fetch_xml(ip):
+    s = socket.socket(
+        socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((ip, 5000))
+
+    hdr = s.recv(16)
+    xml=''; data='';
+    if( hdr[0:7] == "DRINASD" ):
+        while 1:
+            data = s.recv(1024)
+            if data:
+                xml = xml+data
+                # break when \0 is detected
+                if b'\0' in data:
+                    break
+    s.close()
+    return xml.strip(b'\0')
+
+def human_readable(num):
+    for x in ['b','K','M','G']:
+        if num < 1024.0:
+            return "%3.1f%s" % (num, x)
+        num /= 1024.0
+    return "%3.1f%s" % (num, 'T')
+
+
+if __name__ == '__main__':
+
+    parser = optparse.OptionParser(usage='%prog [<options>] <drobo host>', add_help_option=False)
+    parser.add_option('-h', '--human-readable', dest='h',
+        action="store_true", help='print sizes in human readable format')
+    parser.add_option('--help', action="help", help='this help')
+    options, args = parser.parse_args()
+
+    try:
+        args[0]
+    except IndexError:
+        print "No drobo host provided (see --help for help)"
+        exit(1)
+
+    run(args[0], options)
+
