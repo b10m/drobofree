@@ -17,9 +17,9 @@ def run(ip, opt):
         header = [ "Drobo", "Size", "Used", "Avail", "Use%" ]
         output = [
             name,
-            human_readable(size) if opt.h else size,
-            human_readable(used) if opt.h else used,
-            human_readable(size-used) if opt.h else size-used,
+            human_readable(size)      if opt.h else "{0:.0f}".format(size),
+            human_readable(used)      if opt.h else "{0:.0f}".format(used),
+            human_readable(size-used) if opt.h else "{0:.0f}".format(size-used),
             "{0:.0f}".format(float(used)/size*100)
         ]
 
